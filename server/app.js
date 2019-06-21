@@ -127,11 +127,12 @@ app.get('/playlists', function(req, res) {
     headers: { 'Authorization': 'Bearer ' + access_token },
     json: true
   };
+  
   request.get(options, function(error, response, body) {
     console.log(body);
-    //var total = body.total;
-    //var playlist1 = body.items[0].name;
-    //var playlist2 = body.items[1].name;
+    var total = body.total;
+    var playlist1 = body.items[0].name;
+    var playlist2 = body.items[1].name;
   });
 });
 

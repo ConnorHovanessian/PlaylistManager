@@ -62,11 +62,12 @@
       </dl>
     </script>
 
-    <!-- <script id="playlists-template" type="text/x-handlebars-template">
+    <script id="playlists-template" type="text/x-handlebars-template">
       <h2>Your Playlists</h2>
       <dl class="dl-horizontal">
+          <dt>Playlist:</dt><dd>{{items.0.name}}</dd>
       </dl>
-    </script> -->
+    </script>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
@@ -95,9 +96,9 @@
             oauthTemplate = Handlebars.compile(oauthSource),
             oauthPlaceholder = document.getElementById('oauth');
 
-        // var playlistsSource = document.getElementById('playlists-template').innerHTML,
-        //     playlistsTemplate = Handlebars.compile(playlistsSource),
-        //     playlistsPlaceholder = document.getElementById('playlists');
+        var playlistsSource = document.getElementById('playlists-template').innerHTML,
+            playlistsTemplate = Handlebars.compile(playlistsSource),
+            playlistsPlaceholder = document.getElementById('playlists');
 
         var params = getHashParams();
 
@@ -110,15 +111,11 @@
         } else {
           if (access_token) {
             // render oauth info
+            var id = 'error';
             oauthPlaceholder.innerHTML = oauthTemplate({
               access_token: access_token,
               refresh_token: refresh_token
             });
-
-            // playlistsPlaceholder.innerHTML = playlistsTemplate({
-            //   playlist1: playlist1,
-            //   playlist2: playlist2
-            // });
 
             $.ajax({
                 url: 'https://api.spotify.com/v1/me',
@@ -127,31 +124,31 @@
                 },
                 success: function(response) {
                   userProfilePlaceholder.innerHTML = userProfileTemplate(response);
-
+                  id = response.id;
                   $('#login').hide();
                   $('#loggedin').show();
+
+                  $.ajax({
+                    url: 'https://api.spotify.com/v1/users/'+id+'/playlists',
+                    headers: {
+                      'Authorization': 'Bearer ' + access_token
+                    },
+                    success: function(response) {
+                      console.log(response);
+                      playlistsPlaceholder.innerHTML = playlistsTemplate(response);
+                      $('#login').hide();
+                      $('#loggedin').show();
+                    }
+                });
                 }
             });
+
+            
           } else {
               // render initial screen
               $('#login').show();
               $('#loggedin').hide();
           }
-
-          // document.getElementById('obtain-playlists').addEventListener('click', function() {
-          //   $.ajax({
-          //     url: '/playlists',
-          //     data: {
-          //       'refresh_token': refresh_token
-          //     }
-          //   }).done(function(data) {
-          //     access_token = data.access_token;
-          //     oauthPlaceholder.innerHTML = oauthTemplate({
-          //       access_token: access_token,
-          //       refresh_token: refresh_token
-          //     });
-          //   });
-          // }, false);
 
           document.getElementById('obtain-new-token').addEventListener('click', function() {
             $.ajax({
