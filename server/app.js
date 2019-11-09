@@ -9,6 +9,7 @@
 
 var express = require('express'); // Express web server framework
 var request = require('request'); // "Request" library
+const bodyParser = require('body-parser');
 var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
@@ -130,9 +131,6 @@ app.get('/playlists', function(req, res) {
   
   request.get(options, function(error, response, body) {
     console.log(body);
-    var total = body.total;
-    var playlist1 = body.items[0].name;
-    var playlist2 = body.items[1].name;
   });
 });
 
@@ -148,7 +146,6 @@ app.get('/refresh_token', function(req, res) {
     },
     json: true
   };
-
   request.post(authOptions, function(error, response, body) {
     if (!error && response.statusCode === 200) {
       var access_token = body.access_token;
@@ -157,6 +154,19 @@ app.get('/refresh_token', function(req, res) {
       });
     }
   });
+});
+
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.post('/split_playlist', (req, res) => {
+  console.log(`Playlist name is:${req.body.pname}.`);
+  console.log(`Playlist id is:${req.body.pid}.`);
+  //console.log(`Playlist name is:${req.body.fname}.`);
+});
+
+
+app.post('/example', (req, res) => {
+  console.log(`Full name is:${req.body.fname} ${req.body.lname}.`);
 });
 
 console.log('Listening on 8888');

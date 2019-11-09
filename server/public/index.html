@@ -62,10 +62,26 @@
       </dl>
     </script>
 
+    
+
     <script id="playlists-template" type="text/x-handlebars-template">
       <h2>Your Playlists</h2>
       <dl class="dl-horizontal">
-          <dt>Playlist:</dt><dd>{{items.0.name}}</dd>
+        {{#each items}}
+          <div>
+            <dl class="dl-horizontal">
+              <dt>{{name}}</dt><dd class="text-overflow">{{tracks.total}} Songs</dd> 
+
+              <form action="http://localhost:8888/split_playlist" method="POST">
+                <input type="hidden" value={{name}} name="pname"><br>
+                <input type="hidden" value={{id}} name="pid"><br>
+              <button type="submit">Split</button>
+              </form>
+
+            </dl>
+            
+          </div>
+        {{/each}}
       </dl>
     </script>
 
@@ -122,6 +138,7 @@
                 headers: {
                   'Authorization': 'Bearer ' + access_token
                 },
+                //Get user playlists
                 success: function(response) {
                   userProfilePlaceholder.innerHTML = userProfileTemplate(response);
                   id = response.id;
@@ -164,8 +181,6 @@
               });
             });
           }, false);
-
-
         }
       })();
     </script>
