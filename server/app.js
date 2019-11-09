@@ -121,18 +121,8 @@ app.get('/callback', function(req, res) {
     });
   }
 });
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get('/playlists', function(req, res) {
-  var options = {
-    url: 'https://api.spotify.com/v1/users/'+id+'/playlists',	
-    headers: { 'Authorization': 'Bearer ' + access_token },
-    json: true
-  };
-  
-  request.get(options, function(error, response, body) {
-    console.log(body);
-  });
-});
 
 app.get('/refresh_token', function(req, res) {
   // requesting access token from refresh token
@@ -156,18 +146,54 @@ app.get('/refresh_token', function(req, res) {
   });
 });
 
-app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post('/split_playlist', (req, res) => {
   console.log(`Playlist name is:${req.body.pname}.`);
   console.log(`Playlist id is:${req.body.pid}.`);
-  //console.log(`Playlist name is:${req.body.fname}.`);
+  console.log('URL is: ' + 'https://api.spotify.com/v1/playlists/' + req.body.pid + '/tracks');
+
+  //GET https://api.spotify.com/v1/playlists/{playlist_id}/tracks
+
+  var options = {
+    url: 'https://api.spotify.com/v1/playlists/' + req.body.pid + '/tracks',
+    headers: { 'Authorization': 'Bearer ' + access_token },
+    json: true
+  };
+  var trackYears = [];
+  var trackIDs = [];
+
+  getTracks(options, trackYears, trackIDs);
+
+  console.log("Final size of trackYears: " + trackYears.length);
 });
 
-
-app.post('/example', (req, res) => {
-  console.log(`Full name is:${req.body.fname} ${req.body.lname}.`);
-});
+//Used to recursively get pages of tracks from playlist: ends when body.url = null
+const getTracks = function(options, trackYears, trackIDs) {
+  if(options.url !=null ){
+    request.get(options, function(error, response, body) {
+      if (!error && response.statusCode === 200) {
+        options.url = body.next;
+        for(i = 0; i<body.items.length; i++)
+        {
+            //console.log(body.items[i].added_at.substring(0,4) + " " + body.items[i].track.id);
+            trackYears.push(body.items[i].added_at.substring(0,4));
+            trackIDs.push(body.items[i].track.id);
+        }
+        console.log("Current size of trackYears: " + trackYears.length);
+        getTracks(options, trackYears, trackIDs);
+      }
+      else{
+        console.log(response.statusCode + "  " + response.statusMessage);
+        options.url = null;
+      } 
+    });
+  }
+  //Only hit when all tracks are categorized by year (or we errored out)
+  else {
+    console.log("making new playlists");
+    //Make new playlists by year
+  }
+};
 
 console.log('Listening on 8888');
 app.listen(8888);
