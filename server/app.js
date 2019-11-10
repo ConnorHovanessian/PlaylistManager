@@ -35,7 +35,7 @@ var generateRandomString = function(length) {
 
 var stateKey = 'spotify_auth_state';
 var app = express();
-var id = "sampleID";
+var userID = "sampleID";
 var access_token = "sampleAccessToken";
 
 app.use(express.static(__dirname + '/public'))
@@ -48,7 +48,7 @@ app.get('/login', function(req, res) {
   res.cookie(stateKey, state);
 
   // your application requests authorization
-  var scope = 'user-read-private user-read-email playlist-read-private playlist-read-collaborative';
+  var scope = 'user-read-private user-read-email playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private';
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
       response_type: 'code',
@@ -103,7 +103,7 @@ app.get('/callback', function(req, res) {
         // use the access token to access the Spotify Web API
         request.get(options, function(error, response, body) {
           console.log(body);
-          id = body.id;
+          userID = body.id;
         });
 
         // we can also pass the token to the browser to make requests from there
@@ -122,7 +122,7 @@ app.get('/callback', function(req, res) {
   }
 });
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(bodyParser.json());
 
 app.get('/refresh_token', function(req, res) {
   // requesting access token from refresh token
@@ -149,8 +149,6 @@ app.get('/refresh_token', function(req, res) {
 
 app.post('/split_playlist', (req, res) => {
   console.log(`Playlist name is:${req.body.pname}.`);
-  console.log(`Playlist id is:${req.body.pid}.`);
-  console.log('URL is: ' + 'https://api.spotify.com/v1/playlists/' + req.body.pid + '/tracks');
 
   //GET https://api.spotify.com/v1/playlists/{playlist_id}/tracks
 
@@ -163,8 +161,6 @@ app.post('/split_playlist', (req, res) => {
   var trackIDs = [];
 
   getTracks(options, trackYears, trackIDs);
-
-  console.log("Final size of trackYears: " + trackYears.length);
 });
 
 //Used to recursively get pages of tracks from playlist: ends when body.url = null
@@ -177,7 +173,7 @@ const getTracks = function(options, trackYears, trackIDs) {
         {
             //console.log(body.items[i].added_at.substring(0,4) + " " + body.items[i].track.id);
             trackYears.push(body.items[i].added_at.substring(0,4));
-            trackIDs.push(body.items[i].track.id);
+            trackIDs.push(body.items[i].track.uri);
         }
         console.log("Current size of trackYears: " + trackYears.length);
         getTracks(options, trackYears, trackIDs);
@@ -185,15 +181,77 @@ const getTracks = function(options, trackYears, trackIDs) {
       else{
         console.log(response.statusCode + "  " + response.statusMessage);
         options.url = null;
+        return response.statusCode;
       } 
     });
   }
-  //Only hit when all tracks are categorized by year (or we errored out)
+  //Only hit when all tracks are categorized by year
   else {
-    console.log("making new playlists");
-    //Make new playlists by year
+    var trackIDs2018 = [];
+    for(i = 0; i<trackYears.length; i++)
+    {
+        if(trackYears[i] == 2018)
+        {
+          trackIDs2018.push(trackIDs[i]);
+        }
+    }
+    console.log("making new playlist");
+    var playlistName = "test2018Playlist";
+    makePlaylist(playlistName, trackIDs2018);
   }
 };
+//POST https://api.spotify.com/v1/users/{user_id}/playlists
+
+const makePlaylist = function(name, trackIDs) {
+  var options = {
+    url: 'https://api.spotify.com/v1/users/'+userID+'/playlists',
+    headers: { 'Authorization': 'Bearer ' + access_token },
+    body: JSON.stringify({
+      'name': name,
+      'public': false
+  })
+  };
+  request.post(options, function(error, response, body) {
+    if (!error && (response.statusCode === 200 || response.statusCode === 201)) {
+      
+      console.log("BODY:" + body);
+      var parsed = JSON.parse(body);
+      fillPlaylist(parsed.id, trackIDs);
+    }
+    else{
+      console.log(response.statusCode + "  " + response.statusMessage);
+      console.log(body);
+      options.url = null;
+      return response.statusCode;
+    }
+  });
+}
+
+//POST https://api.spotify.com/v1/playlists/{playlist_id}/tracks
+const fillPlaylist = function(playlistID, trackIDs) {
+  var options = {
+    url: 'https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',
+    headers: { 'Authorization': 'Bearer ' + access_token },
+    body: JSON.stringify({
+      'uris': trackIDs
+  })
+  };
+  console.log("Starting fill operation");
+  request.post(options, function(error, response, body) {
+    if (!error && (response.statusCode === 200 || response.statusCode === 201)) {
+      console.log('fill successful');
+    }
+    else{
+      console.log('fill unsuccessful');
+      console.log(response.statusCode + "  " + response.statusMessage);
+      console.log(body);
+      options.url = null;
+      return response.statusCode;
+    } 
+  });
+
+}
+
 
 console.log('Listening on 8888');
 app.listen(8888);
