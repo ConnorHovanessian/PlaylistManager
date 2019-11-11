@@ -229,26 +229,37 @@ const makePlaylist = function(name, trackIDs) {
 
 //POST https://api.spotify.com/v1/playlists/{playlist_id}/tracks
 const fillPlaylist = function(playlistID, trackIDs) {
-  var options = {
-    url: 'https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',
-    headers: { 'Authorization': 'Bearer ' + access_token },
-    body: JSON.stringify({
-      'uris': trackIDs
-  })
-  };
-  console.log("Starting fill operation");
-  request.post(options, function(error, response, body) {
-    if (!error && (response.statusCode === 200 || response.statusCode === 201)) {
-      console.log('fill successful');
-    }
-    else{
-      console.log('fill unsuccessful');
-      console.log(response.statusCode + "  " + response.statusMessage);
-      console.log(body);
-      options.url = null;
-      return response.statusCode;
-    } 
-  });
+
+  var toFill = trackIDs.length;
+  var numCallsNeeded = Math.ceil(toFill / 100);
+
+  //Can only send 100 tracks at a time, so we iterate per 100
+  for(i=0; i<numCallsNeeded; i++)
+  {
+    var trackIDsSegment = trackIDs.slice(0+100*i, Math.min(100 + 100*i, toFill));
+
+    var options = {
+      url: 'https://api.spotify.com/v1/playlists/'+playlistID+'/tracks',
+      headers: { 'Authorization': 'Bearer ' + access_token },
+      body: JSON.stringify({
+        'uris': trackIDsSegment
+    })
+    };
+
+    request.post(options, function(error, response, body) {
+      if (!error && (response.statusCode === 200 || response.statusCode === 201)) {
+        console.log('fill successful');
+      }
+      else{
+        console.log('fill unsuccessful');
+        console.log(response.statusCode + "  " + response.statusMessage);
+        console.log(body);
+        return response.statusCode;
+      } 
+    });
+
+  }
+  
 
 }
 
