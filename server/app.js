@@ -187,21 +187,35 @@ const getTracks = function(options, trackYears, trackIDs) {
   }
   //Only hit when all tracks are categorized by year
   else {
-    var trackIDs2018 = [];
-    for(i = 0; i<trackYears.length; i++)
-    {
-        if(trackYears[i] == 2018)
-        {
-          trackIDs2018.push(trackIDs[i]);
+    var uniqueYears = onlyUnique(trackYears);
+
+    for(i=0;i<uniqueYears.length;i++){
+      var trackIDsByYear = []
+      for(j=0;j<trackYears.length;j++){
+        if(trackYears[j] == uniqueYears[i]){
+          trackIDsByYear.push(trackIDs[j]);
         }
+      }
+      var playlistName = "Autoplaylist " + uniqueYears[i];
+      makePlaylist(playlistName, trackIDsByYear);
     }
-    console.log("making new playlist");
-    var playlistName = "test2018Playlist";
-    makePlaylist(playlistName, trackIDs2018);
   }
 };
-//POST https://api.spotify.com/v1/users/{user_id}/playlists
 
+function onlyUnique(fullArray) { 
+  var arr = [];
+  var set = new Set();
+  for(i=0;i<fullArray.length;i++){
+    if(!set.has(fullArray[i])){
+      set.add(fullArray[i]);
+      arr.push(fullArray[i]);
+    }
+  }
+  console.log(arr);
+  return(arr);
+}
+
+//POST https://api.spotify.com/v1/users/{user_id}/playlists
 const makePlaylist = function(name, trackIDs) {
   var options = {
     url: 'https://api.spotify.com/v1/users/'+userID+'/playlists',
@@ -213,8 +227,6 @@ const makePlaylist = function(name, trackIDs) {
   };
   request.post(options, function(error, response, body) {
     if (!error && (response.statusCode === 200 || response.statusCode === 201)) {
-      
-      console.log("BODY:" + body);
       var parsed = JSON.parse(body);
       fillPlaylist(parsed.id, trackIDs);
     }
@@ -248,7 +260,6 @@ const fillPlaylist = function(playlistID, trackIDs) {
 
     request.post(options, function(error, response, body) {
       if (!error && (response.statusCode === 200 || response.statusCode === 201)) {
-        console.log('fill successful');
       }
       else{
         console.log('fill unsuccessful');
@@ -257,12 +268,8 @@ const fillPlaylist = function(playlistID, trackIDs) {
         return response.statusCode;
       } 
     });
-
   }
-  
-
 }
-
 
 console.log('Listening on 8888');
 app.listen(8888);
