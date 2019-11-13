@@ -148,7 +148,8 @@ app.get('/refresh_token', function(req, res) {
 
 
 app.post('/split_playlist', (req, res) => {
-  console.log(`Playlist name is:${req.body.pname}.`);
+  console.log(`Playlist name is: ${req.body.pname}.`);
+  var originalName = req.body.pname;
 
   //GET https://api.spotify.com/v1/playlists/{playlist_id}/tracks
 
@@ -159,12 +160,13 @@ app.post('/split_playlist', (req, res) => {
   };
   var trackYears = [];
   var trackIDs = [];
-
-  getTracks(options, trackYears, trackIDs);
+  var originalName = req.body.pname;
+  getTracks(options, trackYears, trackIDs, originalName);
 });
 
 //Used to recursively get pages of tracks from playlist: ends when body.url = null
-const getTracks = function(options, trackYears, trackIDs) {
+const getTracks = function(options, trackYears, trackIDs, originalName) {
+  console.log('original name: ' + originalName);
   if(options.url !=null ){
     request.get(options, function(error, response, body) {
       if (!error && response.statusCode === 200) {
@@ -176,7 +178,7 @@ const getTracks = function(options, trackYears, trackIDs) {
             trackIDs.push(body.items[i].track.uri);
         }
         console.log("Current size of trackYears: " + trackYears.length);
-        getTracks(options, trackYears, trackIDs);
+        getTracks(options, trackYears, trackIDs, originalName);
       }
       else{
         console.log(response.statusCode + "  " + response.statusMessage);
@@ -196,7 +198,7 @@ const getTracks = function(options, trackYears, trackIDs) {
           trackIDsByYear.push(trackIDs[j]);
         }
       }
-      var playlistName = "Autoplaylist " + uniqueYears[i];
+      var playlistName = originalName + " " + uniqueYears[i];
       makePlaylist(playlistName, trackIDsByYear);
     }
   }
