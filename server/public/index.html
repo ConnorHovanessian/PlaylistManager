@@ -29,29 +29,13 @@
         </div>
         <div id="playlists">
         </div>
-        <button class="btn btn-default" id="obtain-new-token">Obtain new token using the refresh token</button>
-      </div>
+        
+        <div id="like_button_container"></div>
+        </div>
     </div>
 
     <script id="user-profile-template" type="text/x-handlebars-template">
       <h1>Logged in as {{display_name}}</h1>
-      <div class="media">
-        <div class="pull-left">
-          <img class="media-object" width="150" src="{{images.0.url}}" />
-        </div>
-        <div class="media-body">
-          <dl class="dl-horizontal">
-            <dt>Display name</dt><dd class="clearfix">{{display_name}}</dd>
-            <dt>Id</dt><dd>{{id}}</dd>
-            <dt>Email</dt><dd>{{email}}</dd>
-            <dt>Spotify URI</dt><dd><a href="{{external_urls.spotify}}">{{external_urls.spotify}}</a></dd>
-            <dt>Link</dt><dd><a href="{{href}}">{{href}}</a></dd>
-            <dt>Profile Image</dt><dd class="clearfix"><a href="{{images.0.url}}">{{images.0.url}}</a></dd>
-            <dt>Country</dt><dd>{{country}}</dd>
-            <dt>Followers</dt><dd>{{followers.total}}</dd>
-          </dl>
-        </div>
-      </div>
     </script>
 
     <script id="oauth-template" type="text/x-handlebars-template">
@@ -61,8 +45,6 @@
         <dt>Refresh token</dt><dd class="text-overflow">{{refresh_token}}</dd>
       </dl>
     </script>
-
-    
 
     <script id="playlists-template" type="text/x-handlebars-template">
       <h2>Your Playlists</h2>
@@ -77,9 +59,7 @@
                 <input type="hidden" value={{id}} name="pid"><br>
               <button type="submit">Split</button>
               </form>
-
             </dl>
-            
           </div>
         {{/each}}
       </dl>
@@ -126,13 +106,8 @@
           alert('There was an error during the authentication');
         } else {
           if (access_token) {
-            // render oauth info
             var id = 'error';
-            oauthPlaceholder.innerHTML = oauthTemplate({
-              access_token: access_token,
-              refresh_token: refresh_token
-            });
-
+            
             $.ajax({
                 url: 'https://api.spotify.com/v1/me',
                 headers: {
@@ -175,15 +150,21 @@
               }
             }).done(function(data) {
               access_token = data.access_token;
-              oauthPlaceholder.innerHTML = oauthTemplate({
-                access_token: access_token,
-                refresh_token: refresh_token
-              });
             });
           }, false);
         }
       })();
     </script>
-  </body>
+
+    
+  
+  <!-- Load React. -->
+  <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
+  <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+
+  <!-- Load our React component. -->
+  <script src="like_button.js"></script>
+</body>
 </html>
 
